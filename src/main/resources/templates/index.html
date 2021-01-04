@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en"  xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link type="text/css" rel="stylesheet" href="css/layui.css">
+    <link type="text/css" rel="stylesheet" href="toastr/toastr.min.css">
+
+    <title> </title>
+</head>
+<body>
+<div class="layui-container" id="app">
+    <div class="layui-row"  style="margin-top: 15px">
+        <div class="layui-col-md4">
+            <input type="text" id="fileName"  name="title" disabled  lay-verify="required" placeholder="请选择表" autocomplete="off" class="layui-input">
+        </div>
+        <div class="layui-col-md2">
+            <button type="button" class="layui-btn layui-bg-blue" id="btn1">
+                <i class="layui-icon layui-icon-upload"></i>导入Excel
+            </button>
+        </div>
+    </div>
+
+    <div class="layui-row" style="margin-top: 15px">
+        <div class="layui-col-md6">
+            <div id="leftPic" style="height: 400px;border: 1px solid #9d9d9d;; margin-right: 10px"></div>
+        </div>
+        <div class="layui-col-md6">
+            <div id="rightPic" style="height: 400px; border: 1px solid #9d9d9d;; margin-left: 10px"></div>
+        </div>
+    </div>
+
+    <div class="layui-row" style="margin-top: 50px; margin-left: 75%">
+        <div class="layui-col-md6" style="font-size: 20px; margin-right: 5px;margin-top: 5px;text-align: right">设定退水流量</div>
+        <div class="layui-col-md4">
+            <input value="50" type="text" onchange="showRightPic()" id="inputFlow" class="layui-input">
+        </div>
+        <div class="layui-col-md1" style="margin-left: 10px;">
+            <div class="layui-row">
+                <i style="cursor: pointer" class="layui-icon layui-icon-up" id="add" onclick="add()"></i>
+            </div>
+            <div class="layui-row">
+                <i  style="cursor: pointer" class="layui-icon layui-icon-down" id="sub" onclick="sub()"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="layui-row" style="margin-top: 15px;margin-left:75%">
+
+        <div class="layui-col-md6" style="font-size: 20px; margin-right: 5px;margin-top: 5px;text-align: right">当前退水系数</div>
+        <div class="layui-col-md4">
+            <input  type="text" name="flow" id="ratio" disabled class="layui-input">
+        </div>
+    </div>
+<!--    <div class="layui-row" style="margin-top: 15px; float: right">-->
+<!--        <button type="button" class="layui-btn layui-bg-blue" id="btn2" onclick="exp()">-->
+<!--            <i class="layui-icon layui-icon-export"></i>导出-->
+<!--        </button>-->
+<!--    </div>-->
+
+</div>
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="layui.all.js"></script>
+<script src="echarts.min.js"></script>
+<script src="jquery-2.2.3.min.js"></script>
+<script src="toastr/toastr.min.js"></script>
+
+<script>
+
+    //读取excel
+    var upload = layui.upload;
+    var uploadInst = upload.render({
+        elem: '#btn1' //绑定元素
+        ,url: '/index/upload' //上传接口
+        ,accept: 'file'
+        ,exts: 'xlsx|xls'
+        ,choose: function(obj){
+            obj.preview(function(index, file, result){
+                $("#fileName").val(file.name);
+            });
+        }
+        ,done: function(res){
+            if(res.msg=="SUCCESS"){
+                //上传完毕回调
+                $("#inputFlow").val("100");
+                renderLeftPic(res);
+                renderPic(res);
+            }else{
+                toastr.warning(res.msg);
+            }
+        }
+        ,error: function(res){
+
+        }
+    });
+
+    //echarts画图
+    var leftoption = {
+        xAxis: {
+            type: 'category',
+            data: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,27,28,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34],
+            axisTick: {
+                show: false
+            },
+            splitLine: {
+                show: false
+            },
+        },
+        yAxis: {
+            type: 'log',
+            logBase: 10,
+            min: 1,
+            axisTick: {
+                show: false
+            },
+            splitLine: {
+                show: false
+            },
+            axisLabel: {
+                formatter: function (value) {
+                    var texts = [];
+                    if (value == 1){
+                        texts.push("10⁰")
+                    }
+                    if (value == 10){
+                        texts.push("10¹")
+                    }
+                    if (value == 100){
+                        texts.push("10²")
+                    }
+                    if (value == 1000){
+                        texts.push("10³")
+                    }
+                    if (value == 10000){
+                        texts.push("10⁴")
+                    }
+                    if (value == 100000){
+                        texts.push("10⁵")
+                    }
+                    if (value == 1000000){
+                        texts.push("10⁶")
+                    }
+                    if (value == 10000000){
+                        texts.push("10⁷")
+                    }
+                    if (value == 100000000){
+                        texts.push("10⁸")
+                    }
+                    return texts;
+                }
+            }
+        },
+        legend: {
+            //data : ['78919', '79813', '79916','退水流量']
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        toolbox: {
+            show: true,
+            feature: {
+                saveAsImage: {
+                    name: '退水曲线',
+                }
+            },
+        },
+        series: [{
+            name: 78919,
+            data: [138,129,120,112,105,99.4,93.7,90.1,88.7,87.3,85.9,84.5,83,80.8,78.1,77.8,74.1,71.7,69.8,68.6,67.3,
+                64.6,60.7,59.4,58.2,56.9,55.7,54.1,52.8,51,49.9,48.8],
+            type: 'line',
+            symbol: 'none',
+        }, {
+            name: 79813,
+            data: [92.1,81.6,77.4,74.8,73.8,68.7,65.3,63.4,59.7,57.5,56.6,55.3,53.9,52.6,51.8,50,47.4,46.1],
+            type: 'line',
+            symbol: 'none',
+        },{
+            name: 79916,
+            data: [239,221,204,186,169,166,162,158,153,147,141,137,132,127,125,123,121,119,117,115,114,112,110,109,
+            107,106,105,103,101,98.5,95.9,93.2,92.6,92,91.4],
+            type: 'line',
+            symbol: 'none',
+        }, {
+            name:'退水流量',
+            data: [],
+            type:'line',
+            symbol: 'none',
+            lineStyle: {
+                type:'dashed'
+            }
+        }
+        ]
+    };
+    var rightoption = {
+        xAxis: {
+            type: 'category',
+            data: [],
+            axisTick: {
+                show: false
+            },
+            splitLine: {
+                show: false
+            },
+        },
+        yAxis: {
+            type: 'log',
+            logBase: 10,
+            min: 1,
+            axisTick: {
+                show: false
+            },
+            splitLine: {
+                show: false
+            },
+            axisLabel: {
+                formatter: function (value) {
+                    var texts = [];
+                    if (value == 1){
+                        texts.push("10⁰")
+                    }
+                    if (value == 10){
+                        texts.push("10¹")
+                    }
+                    if (value == 100){
+                        texts.push("10²")
+                    }
+                    if (value == 1000){
+                        texts.push("10³")
+                    }
+                    if (value == 10000){
+                        texts.push("10⁴")
+                    }
+                    if (value == 100000){
+                        texts.push("10⁵")
+                    }
+                    if (value == 1000000){
+                        texts.push("10⁶")
+                    }
+                    if (value == 10000000){
+                        texts.push("10⁷")
+                    }
+                    if (value == 100000000){
+                        texts.push("10⁸")
+                    }
+                    return texts;
+                }
+            }
+        },
+        legend: {
+            data: []
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        toolbox: {
+            show: true,
+            feature: {
+                saveAsImage: {
+                    name: '平均退水曲线',
+                }
+            },
+        },
+        series: []
+    };
+
+    var myChartleft = echarts.init(document.getElementById('leftPic'));
+    var myCharright = echarts.init(document.getElementById('rightPic'));
+    myChartleft.setOption(leftoption);
+    var $ = layui.jquery;
+    showRightPic(true);
+
+    function showRightPic(flag){
+        var flow = $('#inputFlow').val();
+        var max = -999;
+        for(var i=0;i<leftoption.series.length;i++){
+            var tmpMax = leftoption.series[i].data.length;
+            if(max<tmpMax){
+                max = tmpMax
+            }
+        }
+        var array = new Array(max);
+        var tmp = {
+            name:"退水流量",
+            data: array.fill(flow),
+            type: 'line',
+            symbol: 'none',
+            lineStyle: {
+                type:'dashed'
+            }
+        };
+        if(flag){
+            //第一次加载
+            leftoption.series.push(tmp)
+        }else{
+            leftoption.series[leftoption.series.length-1] = tmp;
+        }
+        myChartleft.clear();
+        myChartleft.setOption(leftoption);
+        myCharright.clear();
+        $.ajax({
+            url: "/index/showright/"+flow,
+            dataType: "json",
+            type: "GET",
+            success: function (res) {
+                if(res.msg=="SUCCESS"){
+                    renderPic(res);
+                }else{
+                    toastr.warning(res.msg);
+                }
+            }
+        })
+    }
+
+    function renderLeftPic(res) {
+        myChartleft.clear();
+        leftoption.series = []
+        var flow = $('#inputFlow').val();
+        var max = -999;
+        var legendArr = res.data.legend;
+        for(var i=0;i<legendArr.length;i++){
+            var tmpMax = res.data[legendArr[i]].length;
+            if(max<tmpMax){
+                max = tmpMax
+            }
+        }
+        var array = new Array(max);
+        var input = res.data.input;
+        for (var i = 0; i<input.length; i++){
+            var arrTmp = input[i].split(",");
+            array.push(arrTmp[0]);
+            var tmp = {
+                name:arrTmp[0],
+                data: arrTmp.slice(1),
+                type: 'line',
+                symbol: 'none',
+            };
+            leftoption.series.push(tmp);
+        }
+        var tmp = {
+            name:"退水流量",
+            data: array.fill(flow),
+            type: 'line',
+            symbol: 'none',
+            lineStyle: {
+                type:'dashed'
+            }
+        };
+        leftoption.series.push(tmp);
+        myChartleft.setOption(leftoption);
+    }
+
+    function renderPic(res) {
+        $("#ratio").val(res.data.ratio);
+        rightoption.xAxis.data = res.data["平均退水曲线"];
+        rightoption.legend.data = res.data.legend;
+        var a = rightoption.legend.data;
+        var first = res.data["平均退水曲线"][0];
+        rightoption.series = [];
+        for (var i=0;i<rightoption.legend.data.length;i++){
+            var tmpData = res.data[a[i]+"_y"];
+            var tmpFirst =  res.data[a[i]][0];
+            var preArray = new Array(Math.abs(first-tmpFirst));
+            tmpData = preArray.concat(tmpData);
+            if(a[i] == '平均退水曲线'){
+                var tmp = {
+                    name:a[i],
+                    data: tmpData,
+                    type: 'line',
+                    symbol: 'none',
+                    lineStyle: {
+                        type:'dashed'
+                    }
+                };
+                rightoption.series.push(tmp);
+            }else{
+                var tmp = {
+                    name:a[i],
+                    data: tmpData,
+                    type: 'line',
+                    symbol: 'none',
+                };
+                rightoption.series.push(tmp);
+            }
+
+        }
+        myCharright.setOption(rightoption);
+    }
+    
+    function add() {
+        var flow = Number($('#inputFlow').val());
+        $('#inputFlow').val(flow + 1);
+        showRightPic();
+    }
+    function sub() {
+        var flow = Number($('#inputFlow').val());
+        $('#inputFlow').val(flow - 1);
+        showRightPic();
+    }
+
+
+</script>
+
+</body>
+</html>
