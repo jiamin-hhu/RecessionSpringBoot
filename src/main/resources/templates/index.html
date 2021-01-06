@@ -10,6 +10,7 @@
     <link type="text/css" rel="stylesheet" href="toastr/toastr.min.css">
 
     <title> </title>
+    <script src="../static/jquery-2.2.3.min.js"></script>
 </head>
 <body>
 <div class="layui-container" id="app">
@@ -17,10 +18,14 @@
         <div class="layui-col-md4">
             <input type="text" id="fileName"  name="title" disabled  lay-verify="required" placeholder="请选择表" autocomplete="off" class="layui-input">
         </div>
-        <div class="layui-col-md2">
+        <div class="layui-col-md4">
             <button type="button" class="layui-btn layui-bg-blue" id="btn1">
                 <i class="layui-icon layui-icon-upload"></i>导入Excel
             </button>
+
+<!--            <button type="button" class="layui-btn layui-bg-orange" onclick="download()">-->
+<!--                <i class="layui-icon layui-icon-download-circle"></i>下载模板-->
+<!--            </button>-->
         </div>
     </div>
 
@@ -70,7 +75,7 @@
 <script src="toastr/toastr.min.js"></script>
 
 <script>
-
+    var baseURL = "http://localhost:8085/"
     //读取excel
     var upload = layui.upload;
     var uploadInst = upload.render({
@@ -316,6 +321,10 @@
         })
     }
 
+    function download() {
+        window.open(baseURL + "/index/download")
+    }
+
     function renderLeftPic(res) {
         myChartleft.clear();
         leftoption.series = []
@@ -402,6 +411,10 @@
         showRightPic();
     }
 
+    window.onresize = function () {
+        myChartleft.resize();
+        myCharright.resize();
+    };
 
 </script>
 
